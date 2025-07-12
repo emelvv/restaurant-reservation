@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: bookingdb
+    ports:
+      - "5432:5432"
+
+  user-service:
+    build: ./user-service
+    environment:
+      DATABASE_URL: postgresql://user:pass@postgres:5432/bookingdb
+    depends_on:
+      - postgres
+    ports:
+      - "8001:8000"
+
+  reservation-service:
+    build: ./reservation-service
+    environment:
+      DATABASE_URL: postgresql://user:pass@postgres:5432/bookingdb
+      USER_SERVICE_URL: http://user-service:8000
+    depends_on:
+      - postgres
+      - user-service
+    ports:
+      - "8002:8000"
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      RABBITMQ_URL: amqp://rabbitmq
+      USER_SERVICE_URL: http://user-service:8000
+    depends_on:
+      - user-service
+      - reservation-service
+      - rabbitmq
+    ports:
+      - "8003:8000"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
