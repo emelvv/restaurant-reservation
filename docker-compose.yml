@@ -1,4 +1,13 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: pass
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
   postgres:
     image: postgres:15
     environment:
@@ -7,6 +16,16 @@ services:
       POSTGRES_DB: bookingdb
     ports:
       - "5432:5432"
+    
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
 
   user-service:
     build: ./user-service
@@ -22,11 +41,14 @@ services:
     environment:
       DATABASE_URL: postgresql://user:pass@postgres:5432/bookingdb
       USER_SERVICE_URL: http://user-service:8000
+      RABBITMQ_URL: amqp://user:pass@rabbitmq:5672/   
     depends_on:
       - postgres
       - user-service
+      - rabbitmq                                    
     ports:
       - "8002:8000"
+
 
   notification-service:
     build: ./notification-service
@@ -39,9 +61,3 @@ services:
       - rabbitmq
     ports:
       - "8003:8000"
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
