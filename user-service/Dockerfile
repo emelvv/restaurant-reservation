@@ -1,5 +1,12 @@
 FROM python:3.11-slim
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+       postgresql-client \
+       gcc \
+       libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt .
@@ -11,4 +18,6 @@ EXPOSE 8000
 
 ENV DATABASE_URL="postgresql://user:pass@postgres:5432/bookingdb"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]

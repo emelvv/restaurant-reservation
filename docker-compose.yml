@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -7,6 +8,10 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
 
   postgres:
     image: postgres:15
@@ -16,7 +21,11 @@ services:
       POSTGRES_DB: bookingdb
     ports:
       - "5432:5432"
-    
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user"]
+      interval: 10s
+      retries: 5
+
   pgadmin:
     image: dpage/pgadmin4:latest
     environment:
@@ -41,23 +50,27 @@ services:
     environment:
       DATABASE_URL: postgresql://user:pass@postgres:5432/bookingdb
       USER_SERVICE_URL: http://user-service:8000
-      RABBITMQ_URL: amqp://user:pass@rabbitmq:5672/   
+      RABBITMQ_URL: amqp://user:pass@rabbitmq:5672/
     depends_on:
       - postgres
       - user-service
-      - rabbitmq                                    
+      - rabbitmq
     ports:
       - "8002:8000"
-
 
   notification-service:
     build: ./notification-service
     environment:
-      RABBITMQ_URL: amqp://rabbitmq
+      RABBITMQ_URL: amqp://user:pass@rabbitmq:5672/
       USER_SERVICE_URL: http://user-service:8000
     depends_on:
-      - user-service
-      - reservation-service
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      user-service:
+        condition: service_started
     ports:
       - "8003:8000"
+
+networks:
+  default:
+    name: restaurant-net

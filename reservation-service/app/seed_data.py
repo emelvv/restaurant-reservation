@@ -1,6 +1,6 @@
 # reservation-service/seed_data.py
 
-from app.models import Base, engine, SessionLocal, Restaurant, Slot
+from models import Base, engine, SessionLocal, Restaurant, Slot
 from datetime import datetime, date, time, timedelta
 
 def seed():
